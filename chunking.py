@@ -18,7 +18,7 @@ from datetime import datetime
 # ============================================================
 
 BASE_DIR = Path(
-    r"C:\Users\mm7453\OneDrive - Point32Health\p32_workplace\adhoc\SOBs"
+    r"C:\Users\mm7453\OneDrive - Health\workplace\adhoc\SOBs"
 )
 
 SOURCE_DIR = BASE_DIR / "cleaned_md_files"
