@@ -16,7 +16,7 @@ from pathlib import Path
 # ============================================================
 
 SOURCE_DIR = Path(
-    r"C:\Users\mm7453\OneDrive - Point32Health\p32_workplace\adhoc\SOBs\all_md_files"
+    r"C:\Users\mm7453\OneDrive - Health\workplace\adhoc\SOBs\all_md_files"
 )
 
 DEST_DIR = SOURCE_DIR.parent / "cleaned_md_files"
