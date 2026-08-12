@@ -797,30 +797,49 @@ def split_into_sections(text: str) -> List[Dict]:
 # ============================================================
 # 14. CHUNKING
 # ============================================================
-
 def chunk_text(
     text: str,
     chunk_size: int = CHUNK_SIZE,
-    overlap: int = CHUNK_OVERLAP
+    overlap: int = CHUNK_OVERLAP,
+    min_chunk: int = MIN_CHUNK
 ) -> List[str]:
     """
     Character-based paragraph-aware chunking.
 
-    Tries paragraph boundaries first.
+    - Target max chunk size = CHUNK_SIZE
+    - Overlap between large chunks = CHUNK_OVERLAP
+    - Ignore tiny chunks below MIN_CHUNK
     """
 
     text = text.strip()
 
+    # Empty text
+    if not text:
+        return []
+
+    # --------------------------------------------------------
+    # Small section:
+    # keep only if it is large enough
+    # --------------------------------------------------------
+
     if len(text) <= chunk_size:
-        return [text]
+
+        if len(text) >= min_chunk:
+            return [text]
+
+        return []
+
 
     paragraphs = re.split(
         r"\n\s*\n",
         text
     )
 
+
     chunks = []
+
     current = ""
+
 
     for paragraph in paragraphs:
 
@@ -829,59 +848,119 @@ def chunk_text(
         if not paragraph:
             continue
 
+
         candidate = (
-            current +
-            "\n\n" +
-            paragraph
+            current
+            + "\n\n"
+            + paragraph
         ).strip()
+
+
+        # ----------------------------------------------------
+        # Paragraph fits inside current chunk
+        # ----------------------------------------------------
 
         if len(candidate) <= chunk_size:
 
             current = candidate
+
             continue
+
+
+        # ----------------------------------------------------
+        # Save current chunk before starting new one
+        # ----------------------------------------------------
 
         if current:
 
-            chunks.append(current.strip())
+            if len(current.strip()) >= min_chunk:
 
-        # Paragraph itself too large
+                chunks.append(
+                    current.strip()
+                )
+
+
+        # ----------------------------------------------------
+        # Paragraph itself is larger than chunk size
+        # ----------------------------------------------------
+
         if len(paragraph) > chunk_size:
 
             start = 0
 
+
             while start < len(paragraph):
 
-                end = start + chunk_size
+                end = min(
+                    start + chunk_size,
+                    len(paragraph)
+                )
 
-                piece = paragraph[start:end].strip()
 
-                if piece:
-                    chunks.append(piece)
+                piece = paragraph[
+                    start:end
+                ].strip()
 
-                start = end - overlap
+
+                if len(piece) >= min_chunk:
+
+                    chunks.append(
+                        piece
+                    )
+
+
+                if end >= len(paragraph):
+                    break
+
+
+                start = max(
+                    end - overlap,
+                    start + 1
+                )
+
 
             current = ""
 
+
+        # ----------------------------------------------------
+        # Normal paragraph starts a new chunk
+        # ----------------------------------------------------
+
         else:
 
-            # Carry overlap from previous chunk
             previous_tail = ""
+
 
             if chunks and overlap > 0:
 
-                previous_tail = chunks[-1][-overlap:]
+                previous_tail = (
+                    chunks[-1][
+                        -overlap:
+                    ]
+                )
+
 
             current = (
-                previous_tail +
-                "\n\n" +
-                paragraph
+                previous_tail
+                + "\n\n"
+                + paragraph
             ).strip()
 
+
+    # --------------------------------------------------------
+    # Final remaining chunk
+    # --------------------------------------------------------
+
     if current:
-        chunks.append(current)
+
+        if len(current.strip()) >= min_chunk:
+
+            chunks.append(
+                current.strip()
+            )
+
 
     return chunks
-
 
 # ============================================================
 # 15. EMBEDDING TEXT
